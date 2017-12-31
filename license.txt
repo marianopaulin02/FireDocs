@@ -1,0 +1,4 @@
+You can use and modify the code for commercial use but, please give some credit
+to the project linking FireDocs project page on Github:
+https://github.com/marianopaulin02/FireDocs/ in the article's footer of your
+implementation.

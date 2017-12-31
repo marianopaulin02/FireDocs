@@ -1,0 +1,88 @@
+.customtabs{
+    background: #fff;
+}
+.btn{
+    color: #FFF!important;
+}
+md-tabs-wrapper {
+    display: none;
+}
+i.material-icons {
+    vertical-align: middle;
+}
+.updateddate{
+    font-size: 12px;
+}
+.rowpost{
+    border-bottom: 1px solid #DDD;
+    border-top: 1px solid #DDD;
+    margin-top: -1px;
+}
+.editsections i.material-icons{
+    cursor: pointer !important;
+}
+.itemsection{
+    border-left: 1px solid #DDD;
+    margin-left: 20px;
+    padding-left: 20px;
+}
+.rowhover:hover{
+    background: #00000012;
+}
+.rowhover{
+    padding-left: 10px;
+}
+.preview{
+    width: 100px;
+    height: 100px;
+    background-position: 50% 50%;
+    background-repeat: no-repeat;
+    background-size:contain;
+    border: 1px dashed #DDD;
+}
+.previewFile{
+    padding-top: 28px;
+}
+.previewFile .material-icons{
+    font-size: 45px;
+}
+md-input-container{
+    margin: 0;
+}
+md-input-container div[ng-message]{
+    margin-bottom: 15px;
+}
+.editorheader{
+    border-bottom: 1px solid #DDD;
+    margin-bottom: 20px;
+}
+.imagePreview {
+    background: #DDD;
+    width: 200px;
+    height: 72px;
+    text-align: center;
+    font-family: monospace;
+    font-size: 20px;
+    color: #bbb;
+    padding-top: 56px;
+    margin: 10px;
+    display: inline-block;
+}
+.imagePreviewImg {
+    width: 200px;
+    background-repeat: no-repeat;
+    background-position: 50% 50%;
+    border: 1px dashed #DDD;
+    height: 120px;
+    background-size: contain;
+    display: inline-block;
+}
+.fileerror {
+    color: #FF5722;
+}
+.fileelement{
+    border-bottom: 1px solid #DDD;
+}
+.filedescrip{
+    padding-left: 10px;
+}

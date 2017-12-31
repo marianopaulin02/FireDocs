@@ -1,0 +1,20 @@
+service firebase.storage {
+  match /b/{bucket}/o {
+    function isFireDocsAdmin() {
+          return request.auth.uid == "<ADMIN_1_UID>"
+          		|| request.auth.uid == "<ADMIN_2_UID>";
+    }
+  	match /helpfiles/{allPaths=**} {
+    	//anyone can read our files (it's ok, it will be public)
+      allow read: if true;
+      allow write: if request.auth != null
+      							//only certain admin users uid's can upload
+      							&& isFireDocsAdmin()
+                    //5Mb maxsize files
+										&& request.resource.size < 5 * 1024 * 1024
+    }
+    match /{allPaths=**} {
+      allow read, write: if request.auth != null;
+    }
+  }
+}

@@ -1,0 +1,65 @@
+{
+  "hosting": {
+    "public": "public",
+    "ignore": [
+      "firebase.json",
+      "**/.*",
+      "**/node_modules/**"
+    ],
+    "rewrites": [
+        {
+            "source":"/ayuda/**",
+            "function":"firedocs"
+        },
+        {
+            "source":"/ayuda**",
+            "function":"firedocs"
+        }
+    ],
+    "headers": [
+          {
+              "source" : "**/*.@(eot|otf|ttf|ttc|woff|font.css)",
+              "headers" : [
+                  {
+                       "key" : "Cache-Control",
+                       "value" : "max-age=1728000"
+                   }
+                ]
+          },{
+              "source" : "/img/*.@(jpg|jpeg|gif|png)",
+              "headers" : [
+                 {
+                      "key" : "Cache-Control",
+                      "value" : "max-age=864000"
+                  }
+              ]
+          },{
+              "source" : "/css/*.css",
+              "headers" : [
+                  {
+                      "key" : "Cache-Control",
+                      "value" : "max-age=1728000"
+                  }
+              ]
+          },{
+              "source" : "/staticjs/*.js",
+              "headers" : [
+                  {
+                      "key" : "Cache-Control",
+                      "value" : "max-age=2592000"
+                  }
+              ]
+          },{
+              "source" : "/js/*.js",
+              "headers" : [
+                  {
+                      "key" : "Cache-Control",
+                      "value" : "max-age=864000"
+                  }
+              ]
+          }
+    ],
+    "cleanUrls": true,
+    "trailingSlash": false
+    }
+}
