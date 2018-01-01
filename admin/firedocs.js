@@ -114,7 +114,7 @@ var helpController = function($scope,$mdDialog,$mdToast,$interval,$mdSidenav){
           // User is signed in.
           $scope.user=user
           firestore = firebase.firestore()
-          storage = firebase.storage(STORAGEBUCKET||undefined)
+          storage = (STORAGEBUCKET)?firebase.app().storage(STORAGEBUCKET):firebase.storage()
           loginSuccess()
         } else {
           // User is signed out.

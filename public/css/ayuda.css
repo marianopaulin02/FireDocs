@@ -4,7 +4,7 @@ body{
     font-family: 'Open Sans', sans-serif;
 }
 nav {
-    background: #2196F3;
+    background: #2196f3;
     padding: 8px 0 8px 0;
     position: fixed;
     width: 100%;
@@ -138,7 +138,7 @@ li.item:hover {
     padding: 0 0 0 14px;
 }
 li.item.selected {
-    color: #2196F3;
+    color: #2196f3;
     font-weight: bold;
 }
 .sidenav ul.list {
@@ -441,7 +441,7 @@ p.faq.open{
     color: inherit;
 }
 .infobox.bg1{
-    background-color: #2196F3;
+    background-color: #2196f3;
 }
 .infobox.bg2{
     background-color: #00BCD4;

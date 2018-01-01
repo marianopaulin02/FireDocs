@@ -8,6 +8,6 @@ Read the features and see some screenshots in my blog post about <a href="https:
 Read the installation guide in <a href="https://tintadecodigo.blogspot.com/2017/12/firedocs-installation.html">FireDocs installation</a>
 
 <hr></hr>
-If your are familiarized with Firebase, you don't will be any problems.
+If your are familiarized with Firebase, you don't will have any problems.
 
 <b>License</b>: You can use and modify the code for commercial use but, please give some credit to the project linking this page in the article's footer of your implementation.  

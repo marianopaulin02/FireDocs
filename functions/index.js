@@ -19,12 +19,12 @@ const
 
 
 //END USER VARIABLES///////////////////////////////////
-var app = express();
+var firedocsApp = express();
 var config = functions.config().firebase;
 admin.initializeApp(config);
 var firestore = admin.firestore();
 
-app.get(DOCS_URI, function (req, res) {///user/:id'  req.params.id
+firedocsApp.get(DOCS_URI, function (req, res) {///user/:id'  req.params.id
     return Promise.all([])
     .then(function(results){
         FireDocs.renderTemplate('home.html',{
@@ -43,7 +43,7 @@ app.get(DOCS_URI, function (req, res) {///user/:id'  req.params.id
 
     })
 })
-app.get(DOCS_URI+'/:articleId', function (req, res) {///user/:id'  req.params.id
+firedocsApp.get(DOCS_URI+'/:articleId', function (req, res) {///user/:id'  req.params.id
     if(!req.params.articleId){
         res.redirect(301,DOCS_URI);
     }
@@ -116,10 +116,10 @@ app.get(DOCS_URI+'/:articleId', function (req, res) {///user/:id'  req.params.id
         },res)
     })
 })
-app.get('*',function (req, res) {//by default
+firedocsApp.get('*',function (req, res) {//by default
     res.redirect(DOCS_URI);
 });
-exports.firedocs = functions.https.onRequest(app);
+exports.firedocs = functions.https.onRequest(firedocsApp);
 // // Create and Deploy Your First Cloud Functions
 // // https://firebase.google.com/docs/functions/write-firebase-functions
 exports.articleUpdate = functions.firestore.document(COLLECTIONLIST+'/{articleUrl}')
