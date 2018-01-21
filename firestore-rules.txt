@@ -1,6 +1,6 @@
 service cloud.firestore {
   match /databases/{database}/documents {
-    function isFireDocsAdmin() {
+    function isFireDocsAdmin() {//<ADMIN_UID> in the users section of your project's console https://console.firebase.google.com/u/0/
           return request.auth.uid == "<ADMIN_1_UID>"
           		|| request.auth.uid == "<ADMIN_2_UID>";
     }
@@ -11,6 +11,9 @@ service cloud.firestore {
       allow read,write: if isFireDocsAdmin();
     }
     match /helpsections/{doc} {
+      allow read,write: if isFireDocsAdmin();
+    }
+    match /helpexplorer/{doc} {
       allow read,write: if isFireDocsAdmin();
     }
   }

@@ -3,11 +3,13 @@
 (CC) BY-NC-SA Mariano Paulin @marianopaulin02
 
 */
-var helpController = function($scope,$mdDialog,$mdToast,$interval,$mdSidenav){
+var helpController = function($scope,$mdDialog,$mdToast,$interval,$mdSidenav,$element){
     var firestore,storage;
     var newArticleSectionIdx;
     var uploadInput;
-    // Initialize your VARIABLES //////////////////////////////////////////////
+
+    //USER DEFINED VARIABLES ///////////////////////////////////////////////////
+    /*
     var config = {
       apiKey: "<YOUR_DATA>",
       authDomain: "<YOUR_DATA>",
@@ -19,15 +21,22 @@ var helpController = function($scope,$mdDialog,$mdToast,$interval,$mdSidenav){
     COLLECTIONLIST     = 'help',                //collection name in firestore
     COLLECTIONARTICLES = 'helparticles',        //collection name in firestore
     COLLECTIONSECTIONS = 'helpsections',        //collection name in firestore
-    HELP_URL = 'https://'+window.location.host+'/ayuda',
+    HELP_URL = 'https://'+window.location.host+'/ayuda', //e.g: https://mysite.com/helpdesk
     STORAGEBUCKET = '', //e.g: gs://my-custom-bucket (leave in blank to use default bucket)
     HELPFILEFOLDER = 'helpfiles',                //folder for files/images In storage
     VALIDIMAGESMIMES = ["image/png","image/gif","image/jpeg"],//VALID MIME TYPES FOR IMAGES FOR UPLOAD
     VALIDFILESMIMES = [],                       //VALID MIME TYPES FOR OTHER FILES FOR UPLOAD
     MAXSIZE = 5*1024*1024,                      //(5Mb) Max sizes for upload
-    CACHETIME = 86400 //Browser cache for de uploaded files in seconds 7200:2 Hours, 43200:12 Hours, 86400:24 Hours, 172800:48 Hours
+    CACHETIME = 86400, //Browser cache for de uploaded files in seconds 7200:2 Hours, 43200:12 Hours, 86400:24 Hours, 172800:48 Hours
+    HELP_STYLES = 'css/ayuda.css', //the styles to show the post
+    COLLECTION_STORAGE_EXPLORER = 'helpexplorer',//collection name in firestore
+    STORAGE_PAGINATION = 50;
+    $scope.login = {
+        facebook:false,
+        google:true,
+    }*/
+    ///END USER DEFINED VARIABLES////////////////////////////////////////////////////////////////////////
 
-    ///////////////////////////////////////////////////////////////////////////
     var addEvent = function(elements,eventName,fn,capture){
         if(elements instanceof NodeList){
             elements.forEach(function(o){o.addEventListener(eventName,fn,!!capture)})
@@ -38,6 +47,8 @@ var helpController = function($scope,$mdDialog,$mdToast,$interval,$mdSidenav){
     firebase.initializeApp(config);
     $scope.selectedIndex=1;
     $scope.user={}
+    $scope.changesCount=0;
+    $scope.browserEnabled = ENABLE_STORAGE_EXPLORER;
     $scope.urlregex = /^[a-z0-9_-]*$/i;
     var reverseUrlRegex = /[^a-z0-9_-]/gi;
     var doubledash = /-*-/g;
@@ -124,11 +135,36 @@ var helpController = function($scope,$mdDialog,$mdToast,$interval,$mdSidenav){
         applyAsync()
 
     })
-    $scope.backFunction=function(){
+    var back = function(){
         $scope.currentPost=undefined;
         $scope.sections=undefined;
         $scope.sectionsloaded=0
+        $scope.selectedIndex=1
+        $scope.changesCount=0;
     }
+    var changes=function(){
+        $scope.changesCount++
+    }
+    $scope.changes=function(){
+        $scope.changesCount++
+    }
+    $scope.backFunction=function(){
+        //lookup for unsaved changes
+        if(!$scope.changesCount)return back()
+        var confirm = $mdDialog.confirm()
+        .title('Unsaved changes')
+        .textContent('')
+        .ariaLabel('unsaved changes')
+        .ok('Return to save')
+        .cancel('go back anyway');
+        $mdDialog.show(confirm).then(function() {
+
+        },back);
+    }
+    function confirmExit(){
+        if($scope.changesCount)return "Unsaved changes!";
+    }
+    window.onbeforeunload=confirmExit;
     $scope.preview = function(key){
         window.open(HELP_URL+'/'+key)
     }
@@ -144,6 +180,7 @@ var helpController = function($scope,$mdDialog,$mdToast,$interval,$mdSidenav){
          .ok('Rename')
          .cancel('Cancel');
        $mdDialog.show(confirm).then(function(result) {
+           changes()
            $scope.sections[sectionIdx].title = result
        });
     }
@@ -220,6 +257,20 @@ var helpController = function($scope,$mdDialog,$mdToast,$interval,$mdSidenav){
             .hideDelay(8000)
         );
     }
+    $scope.searchTerm='';
+    $scope.searchTerm1='';
+    $scope.filterPosts = function() {
+        var str = $scope.searchTerm.toLocaleLowerCase()
+        angular.forEach($scope.newArticleKeys, function(post, key) {
+            $scope.newArticleKeys[key].filter = post.title&&post.title.toLocaleLowerCase().search(str)==-1
+        });
+    }
+    $scope.calcPostsToshow = function(){
+        var str = $scope.searchTerm1.toLocaleLowerCase()
+        angular.forEach($scope.posts, function(post, key) {
+            $scope.posts[key].filter = post.title&&post.title.toLocaleLowerCase().search(str)==-1
+        });
+    }
     var editableEditor = function(cond){
         tinymce.activeEditor.getBody().setAttribute('contenteditable', !!cond);
     }
@@ -250,6 +301,7 @@ var helpController = function($scope,$mdDialog,$mdToast,$interval,$mdSidenav){
                     imageURL:$scope.currentPost.imageURL||'',
                 }
                 $scope.lockpostsaving=0;
+                $scope.changesCount=0;
                 applyAsync()
                 editableEditor(true)
             }).catch(connectionDialog)
@@ -355,17 +407,21 @@ var helpController = function($scope,$mdDialog,$mdToast,$interval,$mdSidenav){
     }
     $scope.openMenu = function($mdOpenMenu, ev) {$mdOpenMenu(ev);};
     $scope.moveSectionUp = function(sectionIdx){
+        changes()
         $scope.sections.splice(sectionIdx-1,0,$scope.sections.splice(sectionIdx,1)[0])
     }
     $scope.moveSectionDown = function(sectionIdx){
+        changes()
         $scope.sections.splice(sectionIdx,0,$scope.sections.splice(sectionIdx+1,1)[0])
     }
     $scope.moveArtUp = function(artIdx,sectionIdx){
+        changes()
         $scope.sections[sectionIdx].urls.splice(artIdx-1,0,$scope.sections[sectionIdx].urls.splice(artIdx,1)[0])
         $scope.sections[sectionIdx].titles.splice(artIdx-1,0,$scope.sections[sectionIdx].titles.splice(artIdx,1)[0])
         $scope.sections[sectionIdx].visibility.splice(artIdx-1,0,$scope.sections[sectionIdx].visibility.splice(artIdx,1)[0])
     }
     $scope.moveArtDown = function(artIdx,sectionIdx){
+        changes()
         $scope.sections[sectionIdx].urls.splice(artIdx,0,$scope.sections[sectionIdx].urls.splice(artIdx+1,1)[0])
         $scope.sections[sectionIdx].titles.splice(artIdx,0,$scope.sections[sectionIdx].titles.splice(artIdx+1,1)[0])
         $scope.sections[sectionIdx].visibility.splice(artIdx,0,$scope.sections[sectionIdx].visibility.splice(artIdx+1,1)[0])
@@ -396,6 +452,7 @@ var helpController = function($scope,$mdDialog,$mdToast,$interval,$mdSidenav){
          .ok('Add')
          .cancel('Cancel');
        $mdDialog.show(confirm).then(function(result) {
+           changes()
            $scope.sections.push({title:result,urls:[],titles:[],visibility:[],visible:true})
        });
     }
@@ -407,6 +464,7 @@ var helpController = function($scope,$mdDialog,$mdToast,$interval,$mdSidenav){
         $scope.sections[newArticleSectionIdx].titles.push($scope.posts[$scope.newArticleKey].title)
         $scope.sections[newArticleSectionIdx].visibility.push($scope.posts[$scope.newArticleKey].draft)
         $scope.closeDialog()
+        changes()
     }
     $scope.saveSections = function(){
         $scope.lockSections=1
@@ -414,23 +472,27 @@ var helpController = function($scope,$mdDialog,$mdToast,$interval,$mdSidenav){
         firestore.collection(COLLECTIONSECTIONS).doc('sections').set({tree:$scope.sections})
         .then(function(){
             $scope.lockSections=0
+            $scope.changesCount=0
             toast('Saved!')
             applyAsync()
         })
         .catch(connectionDialog)
     }
     $scope.deleteArt = function(artIdx,sectionIdx){
+        changes()
         $scope.sections[sectionIdx].urls.splice(artIdx,1)
         $scope.sections[sectionIdx].titles.splice(artIdx,1)
         $scope.sections[sectionIdx].visibility.splice(artIdx,1)
     }
     $scope.deleteSection = function(sectionIdx){
+        changes()
         $scope.sections.splice(sectionIdx,1)
     }
 
     /*FILE MANAGER*/
     var files={}
     $scope.files={}
+    $scope.fileBrowser={}
     var changeInput=function(){
             if(!uploadInput.files.length)return
             for (var i = 0; i < uploadInput.files.length; i++) {
@@ -441,7 +503,8 @@ var helpController = function($scope,$mdDialog,$mdToast,$interval,$mdSidenav){
                     filename:name,
                     size:(uploadInput.files[i].size/(1024*1024)).toFixed(3)+'Mb',
                     file:uploadInput.files[i],
-                    type:uploadInput.files[i].type
+                    type:uploadInput.files[i].type,
+                    browserName:name,
                 }
                 //load the preview for images
                 if(VALIDIMAGESMIMES.indexOf(uploadInput.files[i].type.toLowerCase())!=-1){
@@ -489,7 +552,28 @@ var helpController = function($scope,$mdDialog,$mdToast,$interval,$mdSidenav){
             $scope.files[key].progress=undefined
             $scope.files[key].downloadURL = snapshot.metadata.downloadURLs[0]
             delete $scope.files[key].file //free memory
-            applyAsync()
+
+            //BROWSER
+            if(ENABLE_STORAGE_EXPLORER){
+                firestore.collection(COLLECTION_STORAGE_EXPLORER).doc(key).set({
+                    n:$scope.files[key].browserName,
+                    f:snapshot.metadata.downloadURLs[0],
+                    c:new Date()
+                }).then(function(){
+                    console.log('ok firestore')
+                    $scope.fileBrowser[key]={
+                        n:$scope.files[key].browserName,
+                        f:snapshot.metadata.downloadURLs[0],
+                        fs:($scope.files[key].filename.length<35)?$scope.files[key].filename:$scope.files[key].filename.substr(0,20)+'...'+$scope.files[key].filename.substr(-12,$scope.files[key].filename.length)
+                    }
+                    applyAsync()
+                }).catch(function(e){
+                    console.log(e)
+                    applyAsync()
+                })
+            }else{
+                applyAsync()
+            }
         })
         .catch(function(err){
             console.log(err)
@@ -514,6 +598,7 @@ var helpController = function($scope,$mdDialog,$mdToast,$interval,$mdSidenav){
         $scope.files[key].status='deleting'
         storage.ref(HELPFILEFOLDER+'/'+key+'_'+$scope.files[key].filename).delete().then(function() {
             delete $scope.files[key]
+            delete $scope.fileBrowser[key]
             applyAsync()
             toast('Deleted successfully')
         }).catch(function(error) {
@@ -523,6 +608,9 @@ var helpController = function($scope,$mdDialog,$mdToast,$interval,$mdSidenav){
           applyAsync()
         });
     }
+    $scope.copyUrl = function(key){
+        $scope.copy(HELP_URL+'/'+key)
+    }
     $scope.copy=function(str) {//copia un texto al portapapeles
         var aux = document.createElement("input");
         aux.setAttribute("value", str);
@@ -531,6 +619,96 @@ var helpController = function($scope,$mdDialog,$mdToast,$interval,$mdSidenav){
         document.execCommand("copy");
         document.body.removeChild(aux);
         toast('Copied to clipboard');
+    }
+    /*FILES BROWSER*/
+    $scope.browserMore=0
+    var lastBrowserResult;
+    var browserSearchDb=function(q){
+        return q.limit(STORAGE_PAGINATION).get().then(function(snap){
+            console.log(snap)
+            $scope.browserMore =  snap.size == STORAGE_PAGINATION;
+            var count=0;
+            snap.docs.forEach(function(doc){
+                var tmp = doc.data(),
+                first = tmp.f.lastIndexOf('/'),
+                last = tmp.f.lastIndexOf('?'),
+                tmpn = tmp.f.substring(first + tmp.f.substring(first).indexOf('_') + 1,last)
+                $scope.fileBrowser[doc.id] = {
+                    f:tmp.f,
+                    n:tmp.n,
+                    fs:(tmpn.length<35)?tmpn:tmpn.substr(0,20)+'...'+tmpn.substr(-12,tmpn.length)
+                }
+                lastBrowserResult = tmp.c
+            })
+            $scope.browserNoRes=snap.docs.length==0
+        }).catch(function(e){
+            console.log(e)
+            toast('Error, retry later')
+        })
+    }
+    $scope.browserNextPage = function(){
+        $scope.waitBrowser = 1;
+        if(!lastBrowserResult)return
+        var q = firestore.collection(COLLECTION_STORAGE_EXPLORER).orderBy('c','desc').startAfter(lastBrowserResult)
+        browserSearchDb(q).then(function(){
+            $scope.waitBrowser = 0;
+            applyAsync()
+        }).catch(function(){
+            $scope.waitBrowser = 0;
+            applyAsync()
+        })
+    }
+    $scope.openBrowser=function(){
+        if($scope.browserLoaded==1)return
+        var q = firestore.collection(COLLECTION_STORAGE_EXPLORER).orderBy('c','desc')
+        browserSearchDb(q).then(function(){
+            $scope.browserLoaded = 1
+            applyAsync()
+        }).catch(function(){
+            $scope.browserLoaded = 'error'
+            applyAsync()
+        })
+    }
+    $scope.browserSearchStr=''
+    $scope.browserSearch = function(browserSearchStr){
+        var str = browserSearchStr.toLocaleLowerCase()
+        angular.forEach($scope.fileBrowser, function(file, key){
+            $scope.fileBrowser[key].filter = (file.n+' '+file.t).toLocaleLowerCase().search(str)==-1
+        });
+        applyAsync()
+    }
+    $scope.deleteBrowserFile = function(key){
+        https://firebasestorage.googleapis.com/v0/b/afe-documentation/o/helpfiles%2FEEqFaUBFq4wuj1CLpE0j_comprobantes-en-linea-AFIP.jpg?alt=media&token=09ef5055-3b1f-4823-979f-1c8c48ae1358
+        var tmp=$scope.fileBrowser[key].f,path = storage.et.bucket+'/o/'+HELPFILEFOLDER;
+        var pos = tmp.indexOf(path)
+        console.log(tmp,path,storage.et.bucket)
+        if(pos == -1)return toast('Cannot delete the file') //maybe the storage bucket changes in the time
+        var last= tmp.lastIndexOf('?')
+        console.log('delete', decodeURIComponent(tmp.substring(tmp.indexOf(path)+path.length,(last==-1)?tmp.length:last)))
+        var confirm = $mdDialog.confirm()
+        .title('Delete file permanently?')
+        .textContent('"'+$scope.fileBrowser[key].fs+'" could be in use in some post.')
+        .ariaLabel('delete')
+        .ok('Delete')
+        .cancel('cancel');
+        $mdDialog.show(confirm).then(function() {
+            toast('Deleting file..')
+            storage.ref(HELPFILEFOLDER+decodeURIComponent(tmp.substring(tmp.indexOf(path)+path.length,(last==-1)?tmp.length:last))).delete()
+            .then(function() {
+                firestore.doc(COLLECTION_STORAGE_EXPLORER+'/'+key).delete().then(function(){
+                    toast('File deleted!')
+                    delete $scope.fileBrowser[key]
+                    delete $scope.files[key]
+                }).catch(function(){
+                    toast('Error deleting file from DB')
+                })
+            }).catch(function(error) {
+              toast('Error deleting file from storage')
+            });
+        },function(){});
+    }
+    $scope.openBrowserFile = function(key){
+        window.open($scope.fileBrowser[key].f)
     }
     /*EDITOR*/
     tinymce.init({
@@ -545,13 +723,19 @@ var helpController = function($scope,$mdDialog,$mdToast,$interval,$mdSidenav){
         lists_indent_on_tab:true,
         content_css: [
             '//fonts.googleapis.com/css?family=Open+Sans',
-            '/css/ayuda.css'],
+            HELP_STYLES],
         style_formats: [
             { title: 'Título', block: 'h2'},
             { title: 'Subtítulo', block: 'h3'},
             { title: 'Código', inline: 'code', classes : 'code'},
             { title: 'Nota', block: 'blockquote', classes : 'blockquote'},
         ],
+        setup:function(ed) {
+            ed.on('change', function(e) {
+                $scope.changes()
+                applyAsync()
+            });
+        },
         textcolor_map: [
         "f44336", "Rojo",
         "e81e63", "Rosa",
@@ -583,5 +767,5 @@ var config = function($mdThemingProvider) {
 }
 config.$inject = []
 app.config(config);
-helpController.$inject = ['$scope','$mdDialog','$mdToast','$interval','$mdSidenav'];
+helpController.$inject = ['$scope','$mdDialog','$mdToast','$interval','$mdSidenav','$element'];
 app.controller('helpdashboard',helpController)

@@ -8,11 +8,11 @@
     ],
     "rewrites": [
         {
-            "source":"/ayuda/**",
+            "source":"/<HELP_URL>/**",
             "function":"firedocs"
         },
         {
-            "source":"/ayuda**",
+            "source":"/<HELP_URL>**",
             "function":"firedocs"
         }
     ],
@@ -39,14 +39,6 @@
                   {
                       "key" : "Cache-Control",
                       "value" : "max-age=1728000"
-                  }
-              ]
-          },{
-              "source" : "/staticjs/*.js",
-              "headers" : [
-                  {
-                      "key" : "Cache-Control",
-                      "value" : "max-age=2592000"
                   }
               ]
           },{

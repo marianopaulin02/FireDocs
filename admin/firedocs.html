@@ -18,12 +18,12 @@
     <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.6.6/angular-messages.min.js"></script>
     <script src="https://ajax.googleapis.com/ajax/libs/angular_material/1.1.4/angular-material.min.js"></script>
     <script type="text/javascript" src="firedocs.js"></script>
-    <script src='../staticjs/tinymce.min.js'></script>
+    <script src='staticjs/tinymce.min.js'></script>
     <link rel="stylesheet" href="firedocs.css">
     <body ng-app="helpdashboard" ng-cloak ng-controller="helpdashboard" layout layout-align="center center">
         <div flex-gt-xs="90" flex-gt-sm="80" layout="column" flex layout-fill>
         <md-toolbar class="md-toolbar-tools maintoolbar" ng-show="selectedIndex>0" layout="row">
-            <md-button ng-click="selectedIndex=1;backFunction()" class="md-icon-button" aria-label="back">
+            <md-button ng-click="backFunction()" class="md-icon-button" ng-show="selectedIndex>1" aria-label="back">
                 <i class="material-icons">arrow_back</i>
             </md-button>
             <h1>{{title[selectedIndex]}}</h1>
@@ -34,12 +34,12 @@
             <md-button ng-show="selectedIndex == 1" ng-click="editSections()" aria-label="edit sections">
                 Sections
             </md-button>
-            <md-button ng-show="sections.length&&selectedIndex == 3" ng-disabled="lockSections" aria-label="save" class="md-primary md-raised" ng-click="saveSections()">
+            <md-button ng-show="sections.length&&selectedIndex == 3" ng-disabled="lockSections||!changesCount" aria-label="save" class="md-primary md-raised" ng-click="saveSections()">
                 <span ng-show="lockSections">Saving..</span>
                 <span ng-hide="lockSections">Save</span>
             </md-button>
-            <md-button ng-show="selectedIndex == 2" ng-click="savePost()"class="md-raised md-primary" ng-disabled="newpost.$invalid||lockpostsaving" aria-label="save post">
-                <span ng-show="lockpostsaving">Processing..</span>
+            <md-button ng-show="selectedIndex == 2" ng-click="savePost()"class="md-raised md-primary" ng-disabled="newpost.$invalid||lockpostsaving||!changesCount" aria-label="save post">
+                <span ng-show="lockpostsaving">Saving..</span>
                 <span ng-hide="lockpostsaving">Save</span>
             </md-button>
             <md-menu md-position-mode="target-right target">
@@ -64,12 +64,12 @@
                     <h1>FireDocs Dashboard</h1>
                     <p>Login to continue</p>
                     <div ng-show="!lockLogin" layout-xs="column" layout="row" layout-align="center center" flex>
-                        <md-button ng-click="logInGoogle();lockLogin=1" ng-disabled="lockLogin" class="md-button md-raised md-primary btn" style="background:#f33527" aria-label="Google" layout layout-align="start center"><i class="material-icons">person</i>Google</md-button>
-                        <md-button ng-click="logInFacebook();lockLogin=1" ng-disabled="lockLogin" class="md-button md-raised md-primary btn" style="background:#3b5998" aria-label="Facebook" layout layout-align="start center"><i class="material-icons">person</i>Facebook</md-button>
+                        <md-button ng-if="login.google" ng-click="logInGoogle();lockLogin=1" ng-disabled="lockLogin" class="md-button md-raised md-primary btn" style="background:#f33527" aria-label="Google" layout layout-align="start center"><i class="material-icons">person</i>Google</md-button>
+                        <md-button ng-if="login.facebook" ng-click="logInFacebook();lockLogin=1" ng-disabled="lockLogin" class="md-button md-raised md-primary btn" style="background:#3b5998" aria-label="Facebook" layout layout-align="start center"><i class="material-icons">person</i>Facebook</md-button>
                     </div>
                     <div ng-show="lockLogin" ng-init="lockLogin=false">
                         <md-progress-circular  class="md-accent" md-mode="indeterminate"></md-progress-circular>
-                        Iniciando..
+                        Processing..
                     </div>
                     <div nf-if="errorLogin" style="color:red">
                         {{errorLogin}}
@@ -90,7 +90,7 @@
                     </p>
                     <table layout="column">
                         <tr ng-repeat="(key,post) in posts" class="rowpost" layout width="100%">
-                            <td style="width:1000px">{{post.title}}</td>
+                            <td style="width:1000px" layout layout-align="start center">{{post.title}}</td>
                             <td layout layout-align="center center" style="width:70px">
                                 <i class="material-icons">{{(post.draft)?'lock_outline':'public'}}</i>
                                 <md-tooltip md-direction="top">{{(post.draft)?'Draft':'Public'}}</md-tooltip></td>
@@ -101,7 +101,7 @@
                             <td>
                                 <md-button ng-disabled="post.draft" class="md-icon-button" ng-click="preview(key)" aria-label="preview">
                                     <i class="material-icons">remove_red_eye</i>
-                                    <md-tooltip md-direction="top">Preview</md-tooltip>
+                                    <md-tooltip md-direction="top">View Online</md-tooltip>
                                 </md-button>
                             </td>
                             <td>
@@ -117,6 +117,12 @@
                                         <i class="material-icons">more_vert</i>
                                     </md-button>
                                     <md-menu-content width="4">
+                                        <md-menu-item>
+                                            <md-button ng-click="copyUrl(key)" aria-label="copy post url">
+                                                <i class="material-icons">content_copy</i>
+                                                Copy post URL
+                                            </md-button>
+                                        </md-menu-item>
                                         <md-menu-item>
                                             <md-button ng-click="deletePost(key)" aria-label="delete">
                                                 <i class="material-icons">delete</i>
@@ -149,7 +155,7 @@
                 </div>
                 <form name="newpost" ng-disabled="lockpostsaving" ng-show="currentPost" layout="column" flex>
                     <div layout="row" flex class="editorheader">
-                        <md-switch ng-model="currentPost.draft" aria-label="Visibility" style="margin:8px">
+                        <md-switch ng-model="currentPost.draft" ng-change="changes()" aria-label="Visibility" style="margin:8px">
                             Draft: {{ (currentPost.draft)?'Yes':'No' }}
                         </md-switch>
                         <span flex></span>
@@ -158,46 +164,73 @@
                             <span ng-hide="moredetails">Show details</span>
                         </md-button>
                         <md-button ng-click="openFileManager()"class="md-raised md-primary" aria-label="upload files">
-                            Upload files
+                            Browse files
                         </md-button>
                     </div>
                     <md-input-container>
-                        <input type="text" placeholder="Title" ng-change="createurl()" ng-disabled="currentUser.newpost" ng-model="currentPost.title" name="title" required>
+                        <input type="text" placeholder="Title" ng-change="createurl();changes()" ng-disabled="currentUser.newpost" ng-model="currentPost.title" name="title" required>
                         <div ng-messages="newpost.title.$error">
                             <div ng-message="required">This field is required</div>
                         </div>
                     </md-input-container>
-                    <div layout-xs="column" layout-gt-xs="row" ng-show="moredetails">
-                        <div layout="column" flex>
-                            <md-input-container>
-                                <input type="text" placeholder="URL" ng-model="currentPost.url" ng-disabled="!currentPost.isnew" name="url" ng-pattern="urlregex" required>
-                                <div ng-messages="newpost.url.$error">
-                                    <div ng-message="pattern">Use only letters, numbers and _ - (no spaces)</div>
-                                    <div ng-message="required">This field is required</div>
+                    <div layout="column" ng-show="moredetails">
+                        <div>
+                            <div layout-xs="column" layout-gt-xs="row">
+                                <div layout="column" flex>
+                                    <md-input-container>
+                                        <input type="text" placeholder="URL" ng-model="currentPost.url" ng-model-options="{updateOn:'blur'}" ng-change="changes()" ng-disabled="!currentPost.isnew" name="url" ng-pattern="urlregex" required>
+                                        <div ng-messages="newpost.url.$error">
+                                            <div ng-message="pattern">Use only letters, numbers and _ - (no spaces)</div>
+                                            <div ng-message="required">This field is required</div>
+                                        </div>
+                                    </md-input-container>
+                                    <md-input-container>
+                                        <textarea type="text" placeholder="Article description" ng-model-options="{updateOn:'blur'}" ng-change="changes()" ng-model="currentPost.description" name="description" required maxlength="300" md-maxlength="300"></textarea>
+                                        <div ng-messages="newpost.description.$error">
+                                            <div ng-message="required">This field is required</div>
+                                        </div>
+                                    </md-input-container>
                                 </div>
-                            </md-input-container>
-                            <md-input-container>
-                                <textarea type="text" placeholder="Article description" ng-model="currentPost.description" name="description" required maxlength="300" md-maxlength="300"></textarea>
-                                <div ng-messages="newpost.description.$error">
-                                    <div ng-message="required">This field is required</div>
-                                </div>
-                            </md-input-container>
-                        </div>
-                        <div layout="column" flex layout-align="center top">
-                            <md-input-container>
-                                <input type="text" placeholder="Article image URL" ng-model="currentPost.imageURL" name="image">
-                                <div ng-messages="newpost.title.$error">
-                                    <div ng-message="required">This field is required</div>
-                                </div>
-                            </md-input-container>
-                            <div style="text-align:center">
-                                <div ng-hide="currentPost.imageURL" class="imagePreview">
-                                    800 x 480
-                                </div>
-                                <div ng-show="currentPost.imageURL" class="imagePreviewImg" style="{{(currentPost.imageURL)?'background-image:url('+currentPost.imageURL+');':''}})">
+                                <div layout="column" flex layout-align="center top">
+                                    <md-input-container>
+                                        <input type="text" placeholder="Article image URL" ng-model="currentPost.imageURL" ng-model-options="{updateOn:'blur'}" ng-change="changes()" name="image">
+                                        <div ng-messages="newpost.title.$error">
+                                            <div ng-message="required">This field is required</div>
+                                        </div>
+                                    </md-input-container>
+                                    <div style="text-align:center">
+                                        <div ng-hide="currentPost.imageURL" class="imagePreview">
+                                            800 x 480
+                                        </div>
+                                        <div ng-show="currentPost.imageURL" class="imagePreviewImg" style="{{(currentPost.imageURL)?'background-image:url('+currentPost.imageURL+');':''}})">
+                                        </div>
+                                    </div>
+                                    <md-button aria-label="Change image" ng-click="openFileManager()">Change Image</md-button>
                                 </div>
                             </div>
-                            <md-button aria-label="Change image" ng-click="openFileManager()">Change Image</md-button>
+                        </div>
+                        <md-divider></md-divider>
+                        <div layout="row">
+                            <md-input-container ng-show="!currentPost.isnew">
+                                <md-button class="md-button md-primary md-raised" ng-click="copyUrl(currentPost.url)" aria-label="copy post url">
+                                    Copy this post URL
+                                </md-button>
+                            </md-input-container>
+                            <md-input-container style="margin:20px 0 0 0">
+                                <label>Copy another post URL</label>
+                                <md-select ng-model="postkey" ng-change="copyUrl(postkey)"
+                                           data-md-container-class="selectdemoSelectHeader">
+                                  <md-select-header class="demo-select-header">
+                                    <input ng-model="searchTerm1"
+                                           type="search"
+                                           ng-change="calcPostsToshow()"
+                                           ng-keydown="$event.stopPropagation()"
+                                           placeholder="Search for a post title"
+                                           class="demo-header-searchbox md-text">
+                                  </md-select-header>
+                                    <md-option ng-value="key" ng-repeat="(key,post) in posts" ng-if="!post.filter">{{post.title}} {{post.draft?'(Draft)':''}}</md-option>
+                                </md-select>
+                            </md-input-container>
                         </div>
                     </div>
                     <textarea ng-show="currentPost" id="mytextarea"></textarea>
@@ -276,54 +309,109 @@
     <!--SIDENAV-->
     <md-sidenav class="md-sidenav-right md-whiteframe-4dp" md-component-id="filemanager">
       <md-toolbar class="md-theme-light">
-        <h1 class="md-toolbar-tools">Upload files</h1>
+        <h1 class="md-toolbar-tools">Files</h1>
       </md-toolbar>
-      <md-content layout="column">
-          <md-button ng-click="selectFiles()" class="md-raised md-primary" aria-label="Select files">
-              Select files
-          </md-button>
-          <div layout="row" ng-repeat="(key, file) in files" class="fileelement">
-              <div ng-show="file.previewImg" class="preview previewImg" style="background-image:url({{file.previewImg||''}})">
+      <md-tabs md-dynamic-height>
+        <md-tab label="upload">
+            <md-content layout="column">
+                <md-button ng-click="selectFiles()" class="md-raised md-primary" aria-label="Select files">
+                    Select files
+                </md-button>
+                <div layout="row" ng-repeat="(key, file) in files" class="fileelement">
+                    <div ng-show="file.previewImg" class="preview previewImg" style="background-image:url({{file.previewImg||''}})">
 
-              </div>
-              <div ng-show="file.previewFile" class="preview previewFile" layout layout-align="space-around stretch">
-                  <i class="material-icons">attach_file</i>
-              </div>
-              <div layout="column" flex class="md-caption filedescrip">
-                  <div>
-                      {{file.name}}
-                  </div>
-                  <div>
-                      {{file.size}} - {{file.status||'Upload pending'}} {{file.progress}}
-                  </div>
-                  <div ng-show="file.error" class="fileerror">
-                      {{file.error}}
-                  </div>
-                  <input ng-show="file.downloadURL" type="text" ng-model="file.downloadURL" readonly style="width:90%">
-                  <div layout="row">
-                      <md-button ng-show="file.status=='uploading' && !file.error || file.status=='deleting'" aria-label="uploading" class="md-icon-button">
-                          <md-progress-circular md-diameter="20" class="md-accent" md-size="20" style="display:inline-block" md-mode="indeterminate"></md-progress-circular>
-                      </md-button>
-                      <md-button ng-show="!file.status && !file.error || file.status=='error'" ng-click="uploadFile(key)" aria-label="upload" class="md-icon-button">
-                          <i class="material-icons">file_upload</i>
-                          <md-tooltip md-direction="top">Upload file</md-tooltip>
-                      </md-button>
-                      <md-button ng-show="file.status=='uploaded'||file.error" ng-disabled="file.status=='deleting'" ng-click="archiveFile(key)" aria-label="hide" class="md-icon-button">
-                          <i class="material-icons">archive</i>
-                          <md-tooltip md-direction="top">Archive</md-tooltip>
-                      </md-button>
-                      <md-button ng-show="file.status=='uploaded'" ng-click="copy(file.downloadURL)" aria-label="copy" class="md-icon-button">
-                          <i class="material-icons">content_copy</i>
-                          <md-tooltip md-direction="top">Copy url to clipboard</md-tooltip>
-                      </md-button>
-                      <md-button ng-show="file.error || file.status=='uploaded'" ng-click="deleteFile(key)" aria-label="cancel" class="md-icon-button">
-                          <i class="material-icons">delete</i>
-                          <md-tooltip md-direction="top">Delete file from cloud</md-tooltip>
-                      </md-button>
-                  </div>
-              </div>
-          </div>
-      </md-content>
+                    </div>
+                    <div ng-show="file.previewFile" class="preview previewFile" layout layout-align="space-around stretch">
+                        <i class="material-icons">attach_file</i>
+                    </div>
+                    <div layout="column" flex class="md-caption filedescrip">
+                        <div>
+                            {{file.name}}
+                        </div>
+                        <div>
+                            {{file.size}} - {{file.status||'Upload pending'}} {{file.progress}}
+                        </div>
+                        <md-input-container ng-if="browserEnabled&&file.status!='uploaded'" class="browserName">
+                            <input type="text" ng-model="file.browserName" placeholder="Keywords to browse later">
+                        </md-input-container>
+                        <div ng-show="file.error" class="fileerror">
+                            {{file.error}}
+                        </div>
+                        <input ng-show="file.downloadURL" type="text" ng-model="file.downloadURL" readonly style="width:90%;z-index:1">
+                        <div layout="row">
+                            <md-button ng-show="file.status=='uploading' && !file.error || file.status=='deleting'" aria-label="uploading" class="md-icon-button">
+                                <md-progress-circular md-diameter="20" class="md-accent" md-size="20" style="display:inline-block" md-mode="indeterminate"></md-progress-circular>
+                            </md-button>
+                            <md-button ng-show="!file.status && !file.error || file.status=='error'" ng-click="uploadFile(key)" aria-label="upload" class="md-icon-button">
+                                <i class="material-icons">file_upload</i>
+                                <md-tooltip md-direction="top">Upload file</md-tooltip>
+                            </md-button>
+                            <md-button ng-show="file.status=='uploaded'||file.error" ng-disabled="file.status=='deleting'" ng-click="archiveFile(key)" aria-label="hide" class="md-icon-button">
+                                <i class="material-icons">archive</i>
+                                <md-tooltip md-direction="top">Archive</md-tooltip>
+                            </md-button>
+                            <md-button ng-show="file.status=='uploaded'" ng-click="copy(file.downloadURL)" aria-label="copy" class="md-icon-button">
+                                <i class="material-icons">content_copy</i>
+                                <md-tooltip md-direction="top">Copy url to clipboard</md-tooltip>
+                            </md-button>
+                            <md-button ng-show="file.error || file.status=='uploaded'" ng-click="deleteFile(key)" aria-label="cancel" class="md-icon-button">
+                                <i class="material-icons">delete</i>
+                                <md-tooltip md-direction="top">Delete file from cloud</md-tooltip>
+                            </md-button>
+                        </div>
+                    </div>
+                </div>
+            </md-content>
+        </md-tab>
+        <md-tab label="browse" md-on-select="openBrowser()" ng-if="browserEnabled">
+          <md-content ng-if="!browserLoaded">
+              Loading..
+          </md-content>
+          <md-content class="md-padding" ng-if="browserLoaded=='error'">
+              Error on load.
+              <md-button class="md-raised md-primary" ng-click="openBrowser();browserLoaded=0" aria-label="reload">
+                  Retry
+              </md-button>
+          </md-content>
+          <md-content class="md-padding" ng-if="browserLoaded==1">
+            <md-input-container>
+                <input type="text" ng-model="browserSearchStr" ng-change="browserSearch(browserSearchStr)" placeholder="Search keywords">
+            </md-input-container>
+            <md-divider></md-divider>
+            <div>
+                <div class="browserResult" ng-repeat="(key,file) in fileBrowser" ng-show="!file.filter" layout="column">
+                    <div flex layout="row">
+                        <div layout flex>
+                            {{file.n}}
+                        </div>
+                        <md-button class="md-icon-button" ng-click="copy(file.f)" aria-label="copy link">
+                            <md-tooltip md-direction="top">copy link</md-tooltip>
+                            <i class="material-icons">content_copy</i>
+                        </md-button>
+                        <md-button class="md-icon-button" ng-click="openBrowserFile(key)" aria-label="delete">
+                            <md-tooltip md-direction="top">View file</md-tooltip>
+                            <i class="material-icons">open_in_new</i>
+                        </md-button>
+                        <md-button class="md-icon-button" ng-click="deleteBrowserFile(key)" aria-label="delete">
+                            <md-tooltip md-direction="top">Delete Permanently</md-tooltip>
+                            <i class="material-icons">delete</i>
+                        </md-button>
+                    </div>
+                    <div class="md-caption">{{file.fs}}</div>
+                </div>
+            </div>
+            <div layout="row" layout-align="center center" ng-if="browserMore">
+                <md-button class="md-raised md-primary" ng-disabled="waitBrowser" ng-click="browserNextPage()" aria-label="next page">
+                    <span ng-if="!waitBrowser">Orlder files</span>
+                    <span ng-if="waitBrowser">Loading..</span>
+                </md-button>
+            </div>
+            <div layout="row" layout-align="center center" ng-if="browserNoRes">
+                Sin más resultados
+            </div>
+          </md-content>
+        </md-tab>
+      </md-tabs>
     </md-sidenav>
     <!--DIALOGS-->
     <div style="visibility: hidden">
@@ -336,8 +424,16 @@
                 <div>
                     Select the post to add
                 </div>
-                <md-select ng-model="newArticleKey" name="artkey" required aria-label="select post">
-                    <md-option ng-repeat="(key,post) in newArticleKeys" ng-value="key" ng-disabled="post.lock">{{post.title}}</md-option>
+                <md-select ng-model="newArticleKey" name="artkey" required aria-label="select post" data-md-container-class="selectdemoSelectHeader">
+                    <md-select-header class="demo-select-header">
+                        <input ng-model="searchTerm"
+                               type="text"
+                               ng-change="filterPosts()"
+                               placeholder="Search for a post title"
+                               ng-keydown="$event.stopPropagation()"
+                               class="demo-header-searchbox md-text">
+                    </md-select-header>
+                    <md-option ng-repeat="(key,post) in newArticleKeys" ng-if="!post.filter" ng-value="key" ng-disabled="post.lock">{{post.title}}</md-option>
                 </md-select>
             </form>
             <div layout="row" flex>

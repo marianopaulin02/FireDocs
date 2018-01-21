@@ -4,7 +4,7 @@
 .btn{
     color: #FFF!important;
 }
-md-tabs-wrapper {
+.customtabs md-tabs-wrapper {
     display: none;
 }
 i.material-icons {
@@ -52,6 +52,10 @@ md-input-container{
 md-input-container div[ng-message]{
     margin-bottom: 15px;
 }
+md-toast{
+    position: fixed;
+    bottom: 0;
+}
 .editorheader{
     border-bottom: 1px solid #DDD;
     margin-bottom: 20px;
@@ -85,4 +89,37 @@ md-input-container div[ng-message]{
 }
 .filedescrip{
     padding-left: 10px;
+}
+.selectdemoSelectHeader .demo-header-searchbox {
+    border: none;
+    outline: none;
+    height: 100%;
+    width: 100%;
+    padding: 0;
+}
+.selectdemoSelectHeader .demo-select-header {
+    box-shadow: 0 1px 0 0 rgba(0, 0, 0, 0.1), 0 0 0 0 rgba(0, 0, 0, 0.14), 0 0 0 0 rgba(0, 0, 0, 0.12);
+    padding-left: 10.667px;
+    height: 48px;
+    cursor: pointer;
+    position: relative;
+    display: flex;
+    align-items: center;
+    width: auto;
+}
+.selectdemoSelectHeader md-content._md {
+    max-height: 240px;
+}
+.browserResult:nth-child(even) {
+    background-color: #fbfbfb;
+}
+.browserResult:nth-child(odd) {
+    background-color: #f5f5f5;
+}
+.browserResult .md-caption {
+    color: #b3b3b3;
+    padding: 4px;
+}
+.browserName{
+    margin: 10px 0 -30px 0;
 }

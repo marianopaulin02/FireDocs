@@ -1,6 +1,6 @@
 service firebase.storage {
   match /b/{bucket}/o {
-    function isFireDocsAdmin() {
+    function isFireDocsAdmin() {//<ADMIN_UID> in the users section of your project's console https://console.firebase.google.com/u/0/
           return request.auth.uid == "<ADMIN_1_UID>"
           		|| request.auth.uid == "<ADMIN_2_UID>";
     }
